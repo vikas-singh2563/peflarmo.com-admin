@@ -3,8 +3,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Sidebar, { NavSection } from '@/components/Sidebar';
 import Header from '@/components/Header';
-import LoginView from '@/components/LoginView';
-import LogoutModal from '@/components/LogoutModal';
 import DashboardView from '@/components/views/DashboardView';
 import CustomersView from '@/components/views/CustomersView';
 import OwnersView from '@/components/views/OwnersView';
@@ -52,8 +50,7 @@ import {
 import { RefreshCw, CheckCircle2, AlertTriangle } from 'lucide-react';
 
 export default function AdminDashboardPage() {
-  // Authentication & Session State
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  // Administrator Profile & Session State
   const [currentUser, setCurrentUser] = useState<AdminUser>({
     id: 'ADM-000',
     name: 'Peflarmo Operations Super Admin',
@@ -64,12 +61,10 @@ export default function AdminDashboardPage() {
     isActive: true,
     createdAt: '2026-01-01T09:00:00Z',
   });
-  const [authToken, setAuthToken] = useState<string>('');
 
   // Navigation State
   const [currentSection, setCurrentSection] = useState<NavSection>('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   // Core Data States
   const [stats, setStats] = useState<any>(null);
@@ -156,31 +151,6 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     let active = true;
     (async () => {
-      // Check for stored session token first
-      const storedToken = typeof window !== 'undefined' ? localStorage.getItem('peflarmo_admin_token') : null;
-      if (storedToken) {
-        try {
-          const authRes = await fetch('/api/auth/me', {
-            headers: { Authorization: `Bearer ${storedToken}` },
-          });
-          if (authRes.ok) {
-            const authData = await authRes.json();
-            if (active && authData.user) {
-              setCurrentUser(authData.user);
-              setAuthToken(storedToken);
-              setIsAuthenticated(true);
-            }
-          } else {
-            if (typeof window !== 'undefined') localStorage.removeItem('peflarmo_admin_token');
-            if (active) setIsAuthenticated(false);
-          }
-        } catch {
-          if (active) setIsAuthenticated(false);
-        }
-      } else {
-        if (active) setIsAuthenticated(false);
-      }
-
       try {
         const [
           statsRes,
@@ -241,10 +211,11 @@ export default function AdminDashboardPage() {
     };
   }, []);
 
-  // Handle section selection (with logout intercept)
+  // Handle section selection
   const handleSelectSection = (section: NavSection) => {
     if (section === 'logout') {
-      setIsLogoutModalOpen(true);
+      showToast('Session refreshed for Peflarmo Administrator.');
+      setCurrentSection('dashboard');
       return;
     }
     setCurrentSection(section);
@@ -266,31 +237,6 @@ export default function AdminDashboardPage() {
     } catch (err) {
       console.error('Error switching role:', err);
     }
-  };
-
-  // Login handler
-  const handleLoginSuccess = (user: AdminUser, token: string) => {
-    setCurrentUser(user);
-    setAuthToken(token);
-    setIsAuthenticated(true);
-    showToast(`Welcome back, ${user.name}!`);
-    fetchAllData();
-  };
-
-  // Logout handler
-  const handleConfirmLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
-    } catch (e) {
-      console.error(e);
-    }
-    if (typeof window !== 'undefined') localStorage.removeItem('peflarmo_admin_token');
-    setAuthToken('');
-    setIsAuthenticated(false);
-    setIsLogoutModalOpen(false);
   };
 
   // Operational Action Handlers
@@ -502,11 +448,6 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Render dedicated Login View if signed out
-  if (!isAuthenticated) {
-    return <LoginView onLoginSuccess={handleLoginSuccess} />;
-  }
-
   // Calculate live badge counts for sidebar matching screenshot
   const badgeCounts = {
     pendingApprovals: properties.filter(p => p.approvalStatus === 'Pending Admin Approval').length || 48,
@@ -702,20 +643,12 @@ export default function AdminDashboardPage() {
             <ProfileView
               currentUser={currentUser}
               onSwitchRole={handleSwitchRole}
-              onLogout={() => setIsLogoutModalOpen(true)}
+              onLogout={() => showToast('Session refreshed for Peflarmo Administrator.')}
               onUpdatePhone={handleUpdateAdminPhone}
             />
           )}
         </main>
       </div>
-
-      {/* Logout Confirmation Modal */}
-      <LogoutModal
-        isOpen={isLogoutModalOpen}
-        onClose={() => setIsLogoutModalOpen(false)}
-        onConfirm={handleConfirmLogout}
-        adminName={currentUser.name}
-      />
     </div>
   );
 }

@@ -282,8 +282,8 @@ export default function SettingsView({
               <span className="font-bold text-emerald-600">✓ Connected (Sandbox/Live)</span>
             </div>
             <div className="flex items-center justify-between text-[11px]">
-              <span className="text-slate-600">SMTP Admin Security Email Service</span>
-              <span className="font-bold text-emerald-600">✓ Active (5-min Email OTP)</span>
+              <span className="text-slate-600">Transactional Email Service</span>
+              <span className="font-bold text-emerald-600">✓ Connected (Notifications & Alerts)</span>
             </div>
             <div className="flex items-center justify-between text-[11px]">
               <span className="text-slate-600">UIDAI / Aadhaar Verification API</span>

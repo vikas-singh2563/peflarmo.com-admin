@@ -4,48 +4,33 @@ import React, { useState } from 'react';
 import {
   UserCheck,
   Shield,
-  KeyRound,
-  Lock,
-  History,
-  CheckCircle,
-  AlertCircle,
-  RefreshCw,
   Phone,
   Save,
   Check,
-  Mail,
-  LogOut,
-  Laptop,
+  CheckCircle,
+  Server,
+  Activity,
+  Layers,
+  Sparkles,
 } from 'lucide-react';
 import { AdminUser, AdminRole } from '@/lib/types';
 
 interface ProfileViewProps {
   currentUser: AdminUser;
   onSwitchRole: (role: AdminRole) => void;
-  onLogout: () => void;
+  onLogout?: () => void;
   onUpdatePhone?: (newPhone: string) => Promise<void>;
 }
 
 export default function ProfileView({
   currentUser,
   onSwitchRole,
-  onLogout,
   onUpdatePhone,
 }: ProfileViewProps) {
-  const [oldPassword, setOldPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [passwordMsg, setPasswordMsg] = useState<{ text: string; isError?: boolean } | null>(null);
-  const [isChangingPass, setIsChangingPass] = useState(false);
-
-  // Admin contact phone state
+  // Admin contact phone state (defaulting to official +91 93183 22388)
   const [phoneInput, setPhoneInput] = useState(currentUser.phone || '+91 93183 22388');
   const [isSavingPhone, setIsSavingPhone] = useState(false);
   const [phoneSuccessMsg, setPhoneSuccessMsg] = useState(false);
-
-  // Session termination state
-  const [isLoggingOutAll, setIsLoggingOutAll] = useState(false);
-  const [logoutAllMsg, setLogoutAllMsg] = useState<string | null>(null);
 
   const roles: AdminRole[] = [
     'Super Admin',
@@ -70,47 +55,6 @@ export default function ProfileView({
     'Support Admin': { canApproveProps: false, canManageBookings: false, canReconcileFinance: false, canManageSettings: false },
   };
 
-  const handlePasswordSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setPasswordMsg(null);
-
-    if (newPassword.length < 8) {
-      setPasswordMsg({ text: 'Password must be at least 8 characters long.', isError: true });
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setPasswordMsg({ text: 'New passwords do not match.', isError: true });
-      return;
-    }
-
-    setIsChangingPass(true);
-    try {
-      const res = await fetch('/api/auth/change-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: currentUser.email,
-          currentPassword: oldPassword,
-          newPassword,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        setPasswordMsg({ text: data.error || 'Failed to update password.', isError: true });
-      } else {
-        setPasswordMsg({ text: data.message || 'Password updated and hashed with Bcrypt. Confirmation email sent.' });
-        setOldPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
-      }
-    } catch {
-      setPasswordMsg({ text: 'Network error while updating password.', isError: true });
-    } finally {
-      setIsChangingPass(false);
-    }
-  };
-
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSavingPhone(true);
@@ -130,25 +74,6 @@ export default function ProfileView({
       console.error(err);
     } finally {
       setIsSavingPhone(false);
-    }
-  };
-
-  const handleLogoutAllDevices = async () => {
-    if (!confirm('Are you sure you want to terminate all active sessions across all devices? You will be signed out.')) {
-      return;
-    }
-    setIsLoggingOutAll(true);
-    try {
-      const res = await fetch('/api/auth/logout-all-devices', { method: 'POST' });
-      const data = await res.json();
-      if (res.ok) {
-        setLogoutAllMsg(data.message || 'All sessions terminated.');
-        setTimeout(() => {
-          onLogout();
-        }, 1200);
-      }
-    } catch {
-      setIsLoggingOutAll(false);
     }
   };
 
@@ -173,36 +98,18 @@ export default function ProfileView({
               {currentUser.email} · <span className="font-mono font-semibold text-slate-900">{phoneInput}</span>
             </p>
             <p className="text-[11px] text-slate-400 mt-0.5">
-              Account ID: {currentUser.id} · Active Session: {new Date().toLocaleDateString('en-IN')}
+              Account ID: {currentUser.id} · Console Status: <span className="text-emerald-600 font-semibold">Active & Online</span>
             </p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={handleLogoutAllDevices}
-            disabled={isLoggingOutAll}
-            className="px-3.5 py-2 text-xs font-bold rounded-lg border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 transition-colors flex items-center gap-1.5"
-          >
-            <Laptop className="w-3.5 h-3.5" />
-            <span>{isLoggingOutAll ? 'Terminating...' : 'Logout from All Devices'}</span>
-          </button>
-          <button
-            onClick={onLogout}
-            className="px-4 py-2 text-xs font-bold rounded-lg border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors flex items-center gap-1.5"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Sign Out</span>
-          </button>
+        <div className="flex items-center gap-2">
+          <div className="px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Peflarmo Operations Super Admin</span>
+          </div>
         </div>
       </div>
-
-      {logoutAllMsg && (
-        <div className="p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-xs font-semibold flex items-center gap-2">
-          <CheckCircle className="w-4 h-4 text-amber-600" />
-          <span>{logoutAllMsg}</span>
-        </div>
-      )}
 
       {/* Official Admin Contact Number Management Card */}
       <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-2xs space-y-4">
@@ -223,7 +130,7 @@ export default function ProfileView({
         {phoneSuccessMsg && (
           <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800 flex items-center gap-2">
             <CheckCircle className="w-4 h-4 shrink-0 text-emerald-600" />
-            <span>Administrator contact number updated to <strong>{phoneInput}</strong> and recorded in audit log.</span>
+            <span>Administrator contact number updated to <strong>{phoneInput}</strong>.</span>
           </div>
         )}
 
@@ -313,95 +220,54 @@ export default function ProfileView({
           </div>
         </div>
 
-        {/* Password & Security Configuration */}
+        {/* Administrative System & Operational Status */}
         <div className="bg-white p-6 rounded-xl border border-slate-200 space-y-4 shadow-2xs">
           <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-            <Lock className="w-4 h-4 text-blue-600" />
-            <span>Password Security & Email OTP</span>
+            <Server className="w-4 h-4 text-blue-600" />
+            <span>Administrative Console Overview</span>
           </h3>
 
-          {/* Mandatory Email OTP Security Banner */}
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-1.5">
-            <div className="flex items-center gap-2">
-              <Mail className="w-4 h-4 text-blue-600 shrink-0" />
-              <span className="text-xs font-bold text-blue-900">Mandatory Email OTP Protection</span>
+          <p className="text-xs text-slate-500">
+            Real-time status of Peflarmo operations, regional dispatch hubs, and data synchronization:
+          </p>
+
+          <div className="p-3.5 bg-slate-50 rounded-lg space-y-2.5 text-xs border border-slate-200">
+            <div className="flex items-center justify-between py-1 border-b border-slate-200">
+              <span className="text-slate-600 flex items-center gap-1.5">
+                <Activity className="w-3.5 h-3.5 text-blue-500" />
+                Console Node
+              </span>
+              <span className="font-semibold text-slate-900">peflarmo-core-ap-south</span>
             </div>
-            <p className="text-[11px] text-blue-700 leading-relaxed">
-              Every admin sign-in requires a single-use 6-digit OTP code dispatched to <strong>{currentUser.email}</strong>. OTPs expire strictly in 5 minutes with rate-limited submission protection.
-            </p>
+            <div className="flex items-center justify-between py-1 border-b border-slate-200">
+              <span className="text-slate-600 flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-blue-500" />
+                Authorized Admin
+              </span>
+              <span className="font-semibold text-slate-900">{currentUser.email}</span>
+            </div>
+            <div className="flex items-center justify-between py-1 border-b border-slate-200">
+              <span className="text-slate-600 flex items-center gap-1.5">
+                <Phone className="w-3.5 h-3.5 text-blue-500" />
+                Hotline Contact
+              </span>
+              <span className="font-mono font-bold text-slate-900">{phoneInput}</span>
+            </div>
+            <div className="flex items-center justify-between py-1">
+              <span className="text-slate-600 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                Audit Trail Logging
+              </span>
+              <span className="font-bold text-emerald-600">Active (Real-Time)</span>
+            </div>
           </div>
 
-          {/* Change Password Form */}
-          <form onSubmit={handlePasswordSubmit} className="space-y-3">
-            <h4 className="text-xs font-bold text-slate-800">Change Master Password</h4>
-
-            {passwordMsg && (
-              <div
-                className={`p-2.5 rounded-lg text-xs flex items-center gap-2 ${
-                  passwordMsg.isError
-                    ? 'bg-rose-50 text-rose-800 border border-rose-200'
-                    : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                }`}
-              >
-                {passwordMsg.isError ? (
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                ) : (
-                  <CheckCircle className="w-4 h-4 shrink-0" />
-                )}
-                <span>{passwordMsg.text}</span>
-              </div>
-            )}
-
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">
-                Current Password <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="password"
-                required
-                value={oldPassword}
-                onChange={e => setOldPassword(e.target.value)}
-                placeholder="Enter current password"
-                className="w-full p-2 text-xs border border-slate-300 rounded-lg text-slate-900 focus:outline-hidden focus:border-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">
-                New Password (Min. 8 chars) <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="password"
-                required
-                value={newPassword}
-                onChange={e => setNewPassword(e.target.value)}
-                placeholder="Enter new strong password"
-                className="w-full p-2 text-xs border border-slate-300 rounded-lg text-slate-900 focus:outline-hidden focus:border-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">
-                Confirm New Password <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="password"
-                required
-                value={confirmPassword}
-                onChange={e => setConfirmPassword(e.target.value)}
-                placeholder="Confirm new password"
-                className="w-full p-2 text-xs border border-slate-300 rounded-lg text-slate-900 focus:outline-hidden focus:border-blue-500"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={isChangingPass}
-              className="w-full py-2.5 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-lg disabled:opacity-50 transition-colors shadow-xs"
-            >
-              {isChangingPass ? 'Verifying & Hashing with Bcrypt...' : 'Update Password & Notify Email'}
-            </button>
-          </form>
+          <div className="p-3 bg-blue-50/60 border border-blue-200 rounded-lg text-xs text-blue-900">
+            <p className="font-semibold">Peflarmo Operations Hub</p>
+            <p className="text-[11px] text-blue-700 mt-0.5">
+              Admin sessions have direct access to customer inquiries, property approvals, host escrows, and broker commissions across all active regions.
+            </p>
+          </div>
         </div>
       </div>
     </div>
