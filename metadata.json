@@ -1,0 +1,6 @@
+{
+  "name": "Peflarmo Admin Dashboard",
+  "description": "Enterprise Administration & Operations Control Center for Peflarmo PG, Flat, Room & Hostel Booking Platform",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
